@@ -9,11 +9,11 @@ from typing import Union, Callable
 from functools import wraps
 
 
-def count_calls(fn: Callable) -> Callable:
-    @wraps(fn)
+def count_calls(method: Callable) -> Callable:
+    @wraps(method)
     def wrapper(self, *args, **kwargs):
-        self._redis.incr(fn.__qualname__)
-        return fn(self, *args, **kwargs)
+        self._redis.incr(method.__qualname__)
+        return method(self, *args, **kwargs)
     return wrapper
 
 
