@@ -5,7 +5,7 @@ a class that stores an instance as a private var and flush the instance
 """
 import redis
 import uuid
-import typing 
+from typing import Union, Callable
 
 
 class Cache():
@@ -17,7 +17,7 @@ class Cache():
         """ flush the instance flushdb """
         self._redis.flushdb()
 
-    def store(self, data: typing.Union[str, bytes, int]) -> str:
+    def store(self, data: Union[str, bytes, int, float]) -> str:
         """ generate a random UUID as the key """
         key = str(uuid.uuid4())
 
@@ -27,7 +27,7 @@ class Cache():
         """ Return the generated key """
         return key
 
-    def get(self, key: str, fn: typing.Callable = None) -> typing.Union[str, bytes, int, float]:
+    def get(self, key: str, fn: Callable = None) -> Union[str, bytes, int, float]:
         """retrieve the data associated with the given key from Redis"""
         data = self.redis.get(key)
 
