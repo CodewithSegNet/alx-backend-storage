@@ -20,21 +20,18 @@ def count_calls(method: Callable) -> Callable:
 def call_history(method: Callable) -> Callable:
     @wraps(method)
     def wrapper(self, *args):
-        """ normalize the input arg to a string """
-        input_args_str = [str(arg) for arg in args]
-
         """ append the input arg to the Redis list """
         inputs_key = f"{method.__qualname__}:inputs"
-        self._redis.rpush(inputs_key, *input_args_str)
+        for arg in args:
+            arg_str = str(arg)
+            self._redis.rpush(inputs_key, arg_str)
 
         """ call the original method and store its result """
         result = method(self, *args)
 
-        """ normalize the result to a string """
-        result_str = str(result)
-
         """ append the input arg to the Redis list """
         outputs_key = f"{method.__qualname__}:outputs"
+        result_str = str(result)
         self._redis.rpush(outputs_key, result_str)
 
         return result
