@@ -9,6 +9,14 @@ from typing import Union, Callable
 from functools import wraps
 
 
+def count_calls(fn: Callable) -> Callable:
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        self._redis.incr(fn.__qualname__)
+        return fn(self, *args, **kwargs)
+    return wrapper
+
+
 class Cache():
     def __init__(self):
         """ connect to the redis server and store \
@@ -18,40 +26,13 @@ class Cache():
         """ flush the instance flushdb """
         self._redis.flushdb()
 
-    def count_calls(method: Callable) -> Callable:
-        """ dictionary to store the call count for each method """
-        method_call_count = {}
-
-        @functools.wraps(method)
-        def wrapper(self, *args, **kwargs):
-            """ get the qualified name of the method \
-                    using __qualname__ dunder """
-            method_name = method.__qualname__
-
-            """ increment the call count for the method\
-                    or initialize it to 1 """
-            method_call_count[method_name] = method_call_count.get(
-                method_name, 0) + 1
-
-            """ calll the original method and return its result """
-            return method(self, *args, **kwargs)
-
-        """add a property to the wrapper to \
-                get the call count for a method"""
-        def get_call_count():
-            method_name = method.__qualname__
-            return method_call_count.get(method_name, 0)
-
-        wrapper.get_call_count = get_call_count
-
-        return wrapper
-
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """ generate a random UUID as the key """
         key = str(uuid.uuid4())
 
         """ Store the data in Redis using the generated key """
-        self._redis.set(key, data)
+        self._redis.setex(key, 3600, data)
 
         """ Return the generated key """
         return key
