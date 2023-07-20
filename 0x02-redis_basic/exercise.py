@@ -5,7 +5,7 @@ a class that stores an instance as a private var and flush the instance
 """
 import redis
 import uuid
-from typing import Union, Callable
+from typing import Any, Union, Callable
 from functools import wraps
 
 
@@ -18,24 +18,22 @@ def count_calls(method: Callable) -> Callable:
 
 
 def call_history(method: Callable) -> Callable:
+    """ Tracks the call details of a method in a Cache class
+    """
     @wraps(method)
-    def wrapper(self, *args):
-        """ normalize the input arg to a string """
-        input_args_str = [str(arg) for arg in args]
-
-        """ append the input arg to the Redis list """
-        inputs_key = f"{method.__qualname__}:inputs"
-        self._redis.rpush(inputs_key, *input_args_str)
-        """ call the original method and store its result """
-        result = method(self, *args)
-        """ normalize the result to a string """
-        result_str = str(result)
-        """ append the input arg to the Redis list """
-        outputs_key = f"{method.__qualname__}:outputs"
-        self._redis.rpush(outputs_key, result_str)
-        return result
+    def wrapper(self, *args, **kwargs) -> Any:
+        """returns the methods output after storing its inputs and output.
+        """
+        in_key = '{}:inputs'.format(method.__qualname__)
+        out_key = '{}:outputs'.format(method.__qualname__)
+        if isinstance(self._redis, redis.Redis):
+            self._redis.rpush(in_key, str(args))
+        output = method(self, *args, **kwargs)
+        if isinstance(self._redis, redis.Redis):
+            self._redis.rpush(out_key, output)
+        return output
     return wrapper
-
+    
 
 class Cache():
     def __init__(self):
