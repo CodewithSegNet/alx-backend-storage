@@ -7,14 +7,12 @@ import redis
 import uuid
 from typing import Union, Callable
 
-r = redis.Redis()
-
 
 class Cache():
     def __init__(self):
         """ connect to the redis server and store \
                 the instance in a private var """
-        self._redis = r
+        self._redis = redis.Redis()
 
         """ flush the instance flushdb """
         self._redis.flushdb()
@@ -29,8 +27,7 @@ class Cache():
         """ Return the generated key """
         return key
 
-    def get(self, key: str,
-            fn: Callable = None) -> Union[str, bytes, int, float]:
+    def get(self, key: str, fn: Callable = None) -> Union[str, bytes, int, float]:
         """retrieve the data associated with the given key from Redis"""
         data = self.redis.get(key)
 
