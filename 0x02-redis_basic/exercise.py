@@ -6,6 +6,7 @@ a class that stores an instance as a private var and flush the instance
 import redis
 import uuid
 from typing import Union, Callable
+from functools import wraps
 
 
 class Cache():
@@ -17,6 +18,34 @@ class Cache():
         """ flush the instance flushdb """
         self._redis.flushdb()
 
+    def count_calls(method: Callable) -> Callable:
+        """ dictionary to store the call count for each method """
+        method_call_count = {}
+
+        @functools.wraps(method)
+        def wrapper(self, *args, **kwargs):
+            """ get the qualified name of the method \
+                    using __qualname__ dunder """
+            method_name = method.__qualname__
+
+            """ increment the call count for the method\
+                    or initialize it to 1 """
+            method_call_count[method_name] = method_call_count.get(
+                method_name, 0) + 1
+
+            """ calll the original method and return its result """
+            return method(self, *args, **kwargs)
+
+        """add a property to the wrapper to \
+                get the call count for a method"""
+        def get_call_count():
+            method_name = method.__qualname__
+            return method_call_count.get(method_name, 0)
+
+        wrapper.get_call_count = get_call_count
+
+        return wrapper
+
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """ generate a random UUID as the key """
         key = str(uuid.uuid4())
@@ -27,8 +56,10 @@ class Cache():
         """ Return the generated key """
         return key
 
-    def get(self, key: str, fn: Callable = None) -> Union[str, bytes, int, float]:
-        """retrieve the data associated with the given key from Redis"""
+    def get(self, key: str, fn: Callable = None)\
+            -> Union[str, bytes, int, float]:
+        """retrieve the data associated \
+                with the given key from Redis"""
         data = self._redis.get(key)
 
         """ if the key doesnt exist in Redis, Return None """
