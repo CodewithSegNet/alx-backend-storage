@@ -29,7 +29,7 @@ class Cache():
 
     def get(self, key: str, fn: Callable = None) -> Union[str, bytes, int, float]:
         """retrieve the data associated with the given key from Redis"""
-        data = self.redis.get(key)
+        data = self._redis.get(key)
 
         """ if the key doesnt exist in Redis, Return None """
         if data is None:
