@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+
+# a script that creates or uses the database my_db.
+
+use my_db
